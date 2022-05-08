@@ -235,7 +235,7 @@ namespace ThinPartReplicator
                     return tokens[0] + " " + tokens[1].Substring(0, 1) + pctDone.ToString() + " " + tokens[2].Substring(0, 1) + minutesRemaining.ToString() + " ; updating progress display (" + pctDone.ToString() + "% done, " + minutesRemaining.ToString() + " minutes remaining)";
                 }
 #if RECOVER_FAILED_PRINT
-                else if (tokens[0] == "G80")
+                if (tokens[0] == "G80")
                 {
                     return ";" + originalLine + comment;  // comment out the mesh bed leveling
                 }
