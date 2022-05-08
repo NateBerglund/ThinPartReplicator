@@ -42,7 +42,11 @@ namespace ThinPartReplicator
             string inputMainFilename = "coffee_mug_holder_open_main.txt";
             string inputFooterFilename = "coffee_mug_holder_open_footer.txt";
 
-            string outputFilename = baseFileName + "_" + nReplicants + "_replicants_" + layerHeightText + "_PLA_MK3S_" + printHours.ToString() + "h" + printMinutes + "m.gcode";
+            string outputFilename = baseFileName + "_" + nReplicants
+#if RECOVER_FAILED_PRINT
+                + "_recovering"
+#endif // RECOVER_FAILED_PRINT
+                + "_replicants_" + layerHeightText + "_PLA_MK3S_" + printHours.ToString() + "h" + printMinutes + "m.gcode";
 
             string outputPath = Path.Combine(outputFolder, outputFilename);
             using (StreamWriter sw = new StreamWriter(outputPath, false))
@@ -57,6 +61,7 @@ namespace ThinPartReplicator
                     }
                 }
 
+#if !RECOVER_FAILED_PRINT
                 // Skirt
                 for (int idxY = 0; idxY < nRepsY; idxY++)
                 {
@@ -74,12 +79,24 @@ namespace ThinPartReplicator
                         }
                     }
                 }
+#endif // !RECOVER_FAILED_PRINT
 
                 // Main print
                 for (int idxY = 0; idxY < nRepsY; idxY++)
                 {
                     for (int idxX = 0; idxX < nRepsX; idxX++)
                     {
+#if RECOVER_FAILED_PRINT
+                        // Debugging to recover a failed print
+                        if (idxX == 0 && idxY == 0)
+                        {
+                            idxX = 1;
+                            idxY = 0;
+                        }
+                        else
+                        {
+#endif // RECOVER_FAILED_PRINT
+
                         if (idxX > 0 || idxY > 0)
                         {
                             // Move to filament change position
@@ -99,6 +116,9 @@ namespace ThinPartReplicator
                             sw.WriteLine("G1 E-0.80000 F2100.00000 ; retract filament");
                             sw.WriteLine("G1 Z0.800 F10800.000 ; lift tip up");
                         }
+#if RECOVER_FAILED_PRINT
+                        }
+#endif // RECOVER_FAILED_PRINT
 
                         using (StreamReader sr = new StreamReader(Path.Combine(outputFolder, inputMainFilename)))
                         {
@@ -211,6 +231,12 @@ namespace ThinPartReplicator
 
                     return tokens[0] + " " + tokens[1].Substring(0, 1) + pctDone.ToString() + " " + tokens[2].Substring(0, 1) + minutesRemaining.ToString() + " ; updating progress display (" + pctDone.ToString() + "% done, " + minutesRemaining.ToString() + " minutes remaining)";
                 }
+#if RECOVER_FAILED_PRINT
+                else if (tokens[0] == "G80")
+                {
+                    return ";" + originalLine + comment;  // comment out the mesh bed leveling
+                }
+#endif // RECOVER_FAILED_PRINT
             }
 
             return originalLine + comment;
