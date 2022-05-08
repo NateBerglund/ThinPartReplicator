@@ -1,4 +1,4 @@
-M107 ; turn off the fan
+M107
 ;TYPE:Custom
 ; Filament-specific end gcode
 G4 ; wait
@@ -8,19 +8,19 @@ M907 E538 ; reset extruder motor current
 M104 S0 ; turn off temperature
 M140 S0 ; turn off heatbed
 M107 ; turn off fan
-G1 Z33 ; Move print head up
+G1 Z32.9 ; Move print head up
 G1 X0 Y200 F3000 ; home X axis
 M84 ; disable motors
 M73 P100 R0
 M73 Q100 S0
-; filament used [mm] = 1216.20
-; filament used [cm3] = 2.93
-; filament used [g] = 3.63
+; filament used [mm] = 1182.05
+; filament used [cm3] = 2.84
+; filament used [g] = 3.53
 ; filament cost = 0.13
-; total filament used [g] = 3.63
+; total filament used [g] = 3.53
 ; total filament cost = 0.13
-; estimated printing time (normal mode) = 18m 38s
-; estimated printing time (silent mode) = 18m 40s
+; estimated printing time (normal mode) = 17m 13s
+; estimated printing time (silent mode) = 17m 15s
 
 ; prusaslicer_config = begin
 ; avoid_crossing_perimeters = 0
@@ -53,7 +53,7 @@ M73 Q100 S0
 ; default_filament_profile = "Prusament PLA"
 ; default_print_profile = 0.15mm QUALITY @MK3
 ; deretract_speed = 0
-; disable_fan_first_layers = 1
+; disable_fan_first_layers = 5
 ; dont_support_bridges = 0
 ; draft_shield = disabled
 ; duplicate_distance = 6
@@ -104,12 +104,12 @@ M73 Q100 S0
 ; first_layer_acceleration = 800
 ; first_layer_acceleration_over_raft = 0
 ; first_layer_bed_temperature = 60
-; first_layer_extrusion_width = 0.42
-; first_layer_height = 0.2
+; first_layer_extrusion_width = 0.525
+; first_layer_height = 0.3
 ; first_layer_speed = 20
 ; first_layer_speed_over_raft = 30
 ; first_layer_temperature = 215
-; full_fan_speed_layer = 4
+; full_fan_speed_layer = 8
 ; fuzzy_skin = none
 ; fuzzy_skin_point_dist = 0.8
 ; fuzzy_skin_thickness = 0.3
