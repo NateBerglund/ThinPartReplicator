@@ -58,47 +58,17 @@ namespace ThinPartReplicator
                 }
 
                 // Skirt
-                double firstX = 0.0;
-                double firstY = 0.0;
                 for (int idxY = 0; idxY < nRepsY; idxY++)
                 {
                     for (int idxX = 0; idxX < nRepsX; idxX++)
                     {
-                        if (idxX > 0 || idxY > 0)
-                        {
-                            // Retract filament
-                            sw.WriteLine("G1 E-0.80000 F2100.00000 ; Retract filament");
-
-                            // Go to new starting position
-                            sw.WriteLine("G1"
-                                + " X" + string.Format("{0,1:F3}", Math.Round(firstX + idxX * xRepStep, 3))
-                                + " Y" + string.Format("{0,1:F3}", Math.Round(firstY + idxY * yRepStep, 3)));
-
-                            // Ready filament and restore feed rate
-                            sw.WriteLine("G1 E0.80000 F2100.00000; ready filament");
-                            sw.WriteLine("M204 S1000");
-                            sw.WriteLine("G1 F" + string.Format("{0,1:F3}", printFeedRate) + " ; restore feed rate to that used for printing");
-                        }
-
-                        // Record the first position moved to
-                        firstX = 0.0;
-                        firstY = 0.0;
-                        bool firstMoveOccured = false;
-
                         using (StreamReader sr = new StreamReader(Path.Combine(outputFolder, inputSkirtFilename)))
                         {
                             string line = sr.ReadLine();
                             while (line != null)
                             {
-                                string modifiedLine = ApplyRep(idxX, idxY, line, false, out bool isG1, out double x, out double y);
+                                string modifiedLine = ApplyRep(idxX, idxY, line, false);
                                 sw.WriteLine(modifiedLine);
-
-                                if (isG1 && !firstMoveOccured)
-                                {
-                                    firstX = x;
-                                    firstY = y;
-                                    firstMoveOccured = true;
-                                }
                                 line = sr.ReadLine();
                             }
                         }
@@ -112,9 +82,6 @@ namespace ThinPartReplicator
                     {
                         if (idxX > 0 || idxY > 0)
                         {
-                            // Retract filament
-                            sw.WriteLine("G1 E-0.80000 F2100.00000 ; Retract filament");
-
                             // Move to filament change position
                             sw.WriteLine("G1 X250 Y0 Z210 ; move to filament change position");
 
@@ -131,36 +98,15 @@ namespace ThinPartReplicator
                             sw.WriteLine("G92 E0.0");
                             sw.WriteLine("G1 E-0.80000 F2100.00000 ; retract filament");
                             sw.WriteLine("G1 Z0.800 F10800.000 ; lift tip up");
-
-                            // Go to new starting position and ready filament
-                            sw.WriteLine("G1"
-                                + " X" + string.Format("{0,1:F3}", Math.Round(firstX + idxX * xRepStep, 3))
-                                + " Y" + string.Format("{0,1:F3}", Math.Round(firstY + idxY * yRepStep, 3)));
-                            sw.WriteLine("G1 Z" + string.Format("{0,1:F3}", Math.Round(layerHeight, 3)));
-                            sw.WriteLine("G1 E0.80000 F2100.00000; ready filament");
-                            sw.WriteLine("M204 S1000");
-                            sw.WriteLine("G1 F" + string.Format("{0,1:F3}", printFeedRate) + " ; restore feed rate to that used for printing");
                         }
-
-                        // Record the first position moved to
-                        firstX = 0.0;
-                        firstY = 0.0;
-                        bool firstMoveOccured = false;
 
                         using (StreamReader sr = new StreamReader(Path.Combine(outputFolder, inputMainFilename)))
                         {
                             string line = sr.ReadLine();
                             while (line != null)
                             {
-                                string modifiedLine = ApplyRep(idxX, idxY, line, true, out bool isG1, out double x, out double y);
+                                string modifiedLine = ApplyRep(idxX, idxY, line, true);
                                 sw.WriteLine(modifiedLine);
-
-                                if (isG1 && !firstMoveOccured)
-                                {
-                                    firstX = x;
-                                    firstY = y;
-                                    firstMoveOccured = true;
-                                }
                                 line = sr.ReadLine();
                             }
                         }
@@ -182,12 +128,8 @@ namespace ThinPartReplicator
             }
         }
 
-        private static string ApplyRep(int idxX, int idxY, string originalLine, bool adjustTime, out bool isG1, out double x, out double y)
+        private static string ApplyRep(int idxX, int idxY, string originalLine, bool adjustTime)
         {
-            isG1 = false;
-            x = 0.0;
-            y = 0.0;
-
             double xOffset = idxX * xRepStep;
             double yOffset = idxY * yRepStep;
             double timeOffset = 0.0;
@@ -209,11 +151,11 @@ namespace ThinPartReplicator
             {
                 if (tokens[0] == "G1")
                 {
-                    isG1 = true;
-
                     bool hasX = false;
                     bool hasY = false;
                     bool hasZ = false;
+                    double x = 0.0;
+                    double y = 0.0;
                     double z = 0.0;
                     for (int i = 1; i < tokens.Length; i++)
                     {
@@ -263,7 +205,7 @@ namespace ThinPartReplicator
                 {
                     // Future todo: we could also use the originally reported minutes remaining, double.Parse(tokens[2].Substring(1)), in some way
 
-                    double minutesElapsed = 0.01 * double.Parse(tokens[1].Substring(1)) * totalMinutesBase;
+                    double minutesElapsed = timeOffset + 0.01 * double.Parse(tokens[1].Substring(1)) * totalMinutesBase;
                     int minutesRemaining = (int)Math.Round(totalMinutesBase * nReplicants - minutesElapsed);
                     int pctDone = (int)Math.Round(100 * minutesElapsed / (totalMinutesBase * nReplicants));
 

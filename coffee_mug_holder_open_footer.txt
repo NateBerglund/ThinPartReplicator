@@ -1,4 +1,4 @@
-M107
+M107 ; turn off the fan
 ;TYPE:Custom
 ; Filament-specific end gcode
 G4 ; wait
