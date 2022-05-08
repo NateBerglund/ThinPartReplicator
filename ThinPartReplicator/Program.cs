@@ -90,7 +90,7 @@ namespace ThinPartReplicator
                         // Debugging to recover a failed print
                         if (idxX == 0 && idxY == 0)
                         {
-                            idxX = 1;
+                            idxX = 2;
                             idxY = 0;
                         }
                         else
@@ -104,6 +104,9 @@ namespace ThinPartReplicator
 
                             // Change filament
                             sw.WriteLine("M600");
+
+                            // turn off fan
+                            sw.WriteLine("M107 ; turn off fan");
 
                             // Repeat the intro line
                             sw.WriteLine("G28 W ; home all without mesh bed level");
