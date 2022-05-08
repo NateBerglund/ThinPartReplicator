@@ -57,13 +57,32 @@ namespace ThinPartReplicator
                     }
                 }
 
+                // Skirt
+                double firstX = 0.0;
+                double firstY = 0.0;
                 for (int idxY = 0; idxY < nRepsY; idxY++)
                 {
                     for (int idxX = 0; idxX < nRepsX; idxX++)
                     {
+                        if (idxX > 0 || idxY > 0)
+                        {
+                            // Retract filament
+                            sw.WriteLine("G1 E-0.80000 F2100.00000 ; Retract filament");
+
+                            // Go to new starting position
+                            sw.WriteLine("G1"
+                                + " X" + string.Format("{0,1:F3}", Math.Round(firstX + idxX * xRepStep, 3))
+                                + " Y" + string.Format("{0,1:F3}", Math.Round(firstY + idxY * yRepStep, 3)));
+
+                            // Ready filament and restore feed rate
+                            sw.WriteLine("G1 E0.80000 F2100.00000; ready filament");
+                            sw.WriteLine("M204 S1000");
+                            sw.WriteLine("G1 F" + string.Format("{0,1:F3}", printFeedRate) + " ; restore feed rate to that used for printing");
+                        }
+
                         // Record the first position moved to
-                        double firstX = 0.0;
-                        double firstY = 0.0;
+                        firstX = 0.0;
+                        firstY = 0.0;
                         bool firstMoveOccured = false;
 
                         using (StreamReader sr = new StreamReader(Path.Combine(outputFolder, inputSkirtFilename)))
@@ -83,49 +102,19 @@ namespace ThinPartReplicator
                                 line = sr.ReadLine();
                             }
                         }
-
-                        // Go to new starting position
-                        if (idxX < nRepsX - 1 || idxY < nRepsY - 1)
-                        {
-                            sw.WriteLine("G1"
-                                + " X" + string.Format("{0,1:F3}", Math.Round(firstX + idxX * xRepStep, 3))
-                                + " Y" + string.Format("{0,1:F3}", Math.Round(firstY + idxY * yRepStep, 3)));
-                        }
                     }
                 }
 
+                // Main print
                 for (int idxY = 0; idxY < nRepsY; idxY++)
                 {
                     for (int idxX = 0; idxX < nRepsX; idxX++)
                     {
-                        // Record the first position moved to
-                        double firstX = 0.0;
-                        double firstY = 0.0;
-                        bool firstMoveOccured = false;
-
-                        using (StreamReader sr = new StreamReader(Path.Combine(outputFolder, inputMainFilename)))
+                        if (idxX > 0 || idxY > 0)
                         {
-                            string line = sr.ReadLine();
-                            while (line != null)
-                            {
-                                string modifiedLine = ApplyRep(idxX, idxY, line, true, out bool isG1, out double x, out double y);
-                                sw.WriteLine(modifiedLine);
+                            // Retract filament
+                            sw.WriteLine("G1 E-0.80000 F2100.00000 ; Retract filament");
 
-                                if (isG1 && !firstMoveOccured)
-                                {
-                                    firstX = x;
-                                    firstY = y;
-                                    firstMoveOccured = true;
-                                }
-                                line = sr.ReadLine();
-                            }
-                        }
-
-                        // Retract filament
-                        sw.WriteLine("G1 E-0.80000 F2100.00000 ; Retract filament");
-
-                        if (idxX < nRepsX - 1 || idxY < nRepsY - 1)
-                        {
                             // Move to filament change position
                             sw.WriteLine("G1 X250 Y0 Z210 ; move to filament change position");
 
@@ -152,8 +141,34 @@ namespace ThinPartReplicator
                             sw.WriteLine("M204 S1000");
                             sw.WriteLine("G1 F" + string.Format("{0,1:F3}", printFeedRate) + " ; restore feed rate to that used for printing");
                         }
+
+                        // Record the first position moved to
+                        firstX = 0.0;
+                        firstY = 0.0;
+                        bool firstMoveOccured = false;
+
+                        using (StreamReader sr = new StreamReader(Path.Combine(outputFolder, inputMainFilename)))
+                        {
+                            string line = sr.ReadLine();
+                            while (line != null)
+                            {
+                                string modifiedLine = ApplyRep(idxX, idxY, line, true, out bool isG1, out double x, out double y);
+                                sw.WriteLine(modifiedLine);
+
+                                if (isG1 && !firstMoveOccured)
+                                {
+                                    firstX = x;
+                                    firstY = y;
+                                    firstMoveOccured = true;
+                                }
+                                line = sr.ReadLine();
+                            }
+                        }
                     }
                 }
+
+                // Retract filament
+                sw.WriteLine("G1 E-0.80000 F2100.00000 ; Retract filament");
 
                 using (StreamReader sr = new StreamReader(Path.Combine(outputFolder, inputFooterFilename)))
                 {
